@@ -54,4 +54,4 @@ Just edit the series scores in data/playoff_results_apr22_2026.csv and run main.
 Python, pandas, numpy, matplotlib, scipy
 
 ## Course Connection
-DS-122 at Boston University — topics applied: Bayesian inference, probability of superiority, Monte Carlo simulation, Thank you Professor Wobbes
+DS-122 at Boston University — topics applied: Bayesian inference, probability of superiority, Monte Carlo simulation.
