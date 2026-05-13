@@ -35,6 +35,22 @@ We draw 3,000 scenarios from the posterior and simulate the full bracket each ti
 
 ![Finals Chart](outputs/finals_chart.png)
 
+
+## Updated Results (Round 2 — May 13, 2026)
+
+| Team | Win Probability |
+|---|---|
+| Oklahoma City Thunder | 44.7% |
+| Detroit Pistons | 11.3% |
+| Boston Celtics | 10.1% |
+| New York Knicks | 10.0% |
+| San Antonio Spurs | 8.5% |
+| Denver Nuggets | 6.1% |
+| Cleveland Cavaliers | 3.0% |
+| Houston Rockets | 2.4% |
+
+![Round 2 Chart](outputs/round2_chart.png)
+
 ## How to Run
 
 pip install pandas numpy matplotlib scipy
