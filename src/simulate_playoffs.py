@@ -15,19 +15,17 @@ def simulate_series(theta_a, theta_b, rng):
     return 0 if wins_a == 4 else 1
 
 def simulate_bracket_once(theta_map, rng):
-    east_qf = [
-        ("Detroit Pistons", "Orlando Magic"),
-        ("Boston Celtics", "Philadelphia 76ers"),
-        ("New York Knicks", "Atlanta Hawks"),
-        ("Cleveland Cavaliers", "Toronto Raptors"),
+    # Round 2 remaining matchups
+    east_r2 = [
+        ("Cleveland Cavaliers", "Detroit Pistons"),
+    ]
+    west_r2 = [
+        ("San Antonio Spurs", "Minnesota Timberwolves"),
     ]
 
-    west_qf = [
-        ("Oklahoma City Thunder", "Phoenix Suns"),
-        ("San Antonio Spurs", "Portland Trail Blazers"),
-        ("Denver Nuggets", "Minnesota Timberwolves"),
-        ("Los Angeles Lakers", "Houston Rockets"),
-    ]
+    # Round 2 already completed
+    east_r2_winners = ["New York Knicks"]
+    west_r2_winners = ["Oklahoma City Thunder"]
 
     def play_round(matchups):
         winners = []
@@ -36,23 +34,19 @@ def simulate_bracket_once(theta_map, rng):
             winners.append(a if winner_idx == 0 else b)
         return winners
 
-    east_sf_teams = play_round(east_qf)
-    west_sf_teams = play_round(west_qf)
+    # Finish Round 2
+    east_r2_winners += play_round(east_r2)
+    west_r2_winners += play_round(west_r2)
 
-    east_sf = [(east_sf_teams[0], east_sf_teams[1]), (east_sf_teams[2], east_sf_teams[3])]
-    west_sf = [(west_sf_teams[0], west_sf_teams[1]), (west_sf_teams[2], west_sf_teams[3])]
-
-    east_cf_teams = play_round(east_sf)
-    west_cf_teams = play_round(west_sf)
-
-    east_cf = [(east_cf_teams[0], east_cf_teams[1])]
-    west_cf = [(west_cf_teams[0], west_cf_teams[1])]
+    # Conference Finals
+    east_cf = [(east_r2_winners[0], east_r2_winners[1])]
+    west_cf = [(west_r2_winners[0], west_r2_winners[1])]
 
     east_champ = play_round(east_cf)[0]
     west_champ = play_round(west_cf)[0]
 
-    finals = [(east_champ, west_champ)]
-    champ = play_round(finals)[0]
+    # Finals
+    champ = play_round([(east_champ, west_champ)])[0]
     return champ
 
 def posterior_title_probs(teams, samples, weights, n_outer=3000, random_state=42):
