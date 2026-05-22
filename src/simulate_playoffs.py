@@ -24,8 +24,8 @@ def simulate_bracket_once(theta_map, rng):
     ]
 
     # Round 2 already completed
-    east_r2_winners = ["New York Knicks"]
-    west_r2_winners = ["Oklahoma City Thunder"]
+    east_r2_winners = ["New York Knicks", "Cleveland Cavaliers"]
+    west_r2_winners = ["Oklahoma City Thunder", "San Antonio Spurs"]
 
     def play_round(matchups):
         winners = []
