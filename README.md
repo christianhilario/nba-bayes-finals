@@ -108,6 +108,18 @@ Run the model:
 python src/main.py
 ```
 
+### Bracket Dashboard
+
+View the playoff bracket and Bayesian Finals probabilities:
+
+```bash
+python open_dashboard.py
+```
+
+This opens `http://127.0.0.1:8765/dashboard.html`. Results load from your `data/round*_results.csv` files and NBA.com when available. Click **Refresh results** after updating the CSVs.
+
+**Important:** Run `open_dashboard.py` — do not copy-paste the HTML into Chrome.
+
 ## How to Update After New Games
 
 Update the playoff results file with the latest series scores, then rerun the model:
@@ -154,5 +166,5 @@ Potential improvements include:
 - Include home court advantage
 - Use point differential and advanced team statistics
 - Fit prior weights using historical playoff data
-- Add an interactive dashboard
+- ~~Add an interactive dashboard~~ (see `dashboard.html` — read-only bracket view)
 - Automate updates from live NBA data sources

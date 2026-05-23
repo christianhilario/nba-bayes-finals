@@ -16,9 +16,15 @@ def main():
     teams_df = load_teams("data/teams_2026.csv")
     playoff_df, ROUND = load_playoff_results()
 
+    from dashboard_model import load_all_round_results
+
+    results_by_round = load_all_round_results()
+
     priors_df = build_prior_means(teams_df)
     teams, samples, weights = bayesian_update(priors_df, playoff_df)
-    probs = posterior_title_probs(teams, samples, weights)
+    probs = posterior_title_probs(
+        teams, samples, weights, teams_df, results_by_round, n_outer=3000
+    )
 
     out_df = pd.DataFrame({
         "team": list(probs.keys()),

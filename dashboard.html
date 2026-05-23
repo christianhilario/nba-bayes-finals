@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NBA Finals 2026 — Bayesian Bracket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #070b14;
+      --bg-card: rgba(18, 24, 42, 0.72);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef2ff;
+      --muted: #8b95b5;
+      --accent: #ff6b35;
+      --accent-2: #4cc9f0;
+      --win-glow: rgba(76, 201, 240, 0.35);
+      --pred-glow: rgba(255, 107, 53, 0.25);
+      --east: #e63946;
+      --west: #4361ee;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Outfit", system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: auto;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(67, 97, 238, 0.22), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(255, 107, 53, 0.12), transparent),
+        linear-gradient(180deg, #070b14 0%, #0d1224 100%);
+      z-index: -2;
+    }
+
+    .bg-grid::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+      z-index: -1;
+    }
+
+    header {
+      padding: 2rem 2.5rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    h1 span {
+      display: block;
+      font-size: 0.45em;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+
+    .meta {
+      text-align: right;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .meta strong { color: var(--accent-2); font-weight: 600; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.5rem;
+      padding: 0 2rem 2.5rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(12px);
+      padding: 1.25rem;
+    }
+
+    .panel h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .prob-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      font-size: 0.82rem;
+    }
+
+    .prob-row.inactive { opacity: 0.35; }
+
+    .prob-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prob-pct {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--accent-2);
+    }
+
+    .prob-bar-wrap {
+      grid-column: 1 / -1;
+      height: 5px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .prob-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .legend {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .legend span {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .legend .actual { background: var(--accent-2); box-shadow: 0 0 8px var(--win-glow); }
+    .legend .pred { background: var(--accent); box-shadow: 0 0 8px var(--pred-glow); }
+
+    .bracket-wrap {
+      padding-bottom: 0.5rem;
+    }
+
+    .conferences-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .conferences-grid { grid-template-columns: 1fr; }
+    }
+
+    .conf-panel {
+      min-width: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .conf-bracket-scroll {
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+
+    .scroll-hint-bracket {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin: 0 0 0.5rem;
+    }
+
+    .conf-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .conf-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+
+    .conf-badge.east { background: rgba(230, 57, 70, 0.2); color: #ff8a94; border: 1px solid rgba(230,57,70,0.35); }
+    .conf-badge.west { background: rgba(67, 97, 238, 0.2); color: #9bb4ff; border: 1px solid rgba(67,97,238,0.35); }
+
+    .bracket {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 1.25rem;
+      min-width: 720px;
+    }
+
+    .scroll-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .round-col h3 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .matchup {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .matchup:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.14);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+
+    .matchup.live {
+      border-color: rgba(255, 107, 53, 0.45);
+      box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.15);
+    }
+
+    .team-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 0.75rem;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .team-line:last-child { border-bottom: none; }
+
+    .series-pct {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.68rem;
+      color: var(--accent-2);
+      margin-left: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .matchup-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.35rem;
+    }
+
+    .matchup-footer .odds-pair {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.68rem;
+      color: var(--accent-2);
+    }
+
+    .team-line.winner-actual {
+      background: rgba(76, 201, 240, 0.12);
+      box-shadow: inset 3px 0 0 var(--accent-2);
+    }
+
+    .team-line.winner-predicted:not(.winner-actual) {
+      background: rgba(255, 107, 53, 0.08);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .team-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+    }
+
+    .seed {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      width: 1.1rem;
+      text-align: center;
+    }
+
+    .abbr {
+      font-weight: 700;
+      font-size: 0.72rem;
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .team-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .score {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-width: 1.2rem;
+      text-align: right;
+    }
+
+    .matchup-footer {
+      padding: 0.4rem 0.75rem 0.55rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.35rem;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .matchup-footer .odds-pair {
+      color: var(--accent-2);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .finals-block {
+      margin-top: 0.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed var(--border);
+    }
+
+    .finals-block .bracket {
+      grid-template-columns: minmax(280px, 360px);
+      min-width: unset;
+    }
+
+    .empty-state {
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state code {
+      display: block;
+      margin-top: 1rem;
+      font-family: "JetBrains Mono", monospace;
+      background: rgba(255,255,255,0.06);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--accent-2);
+    }
+
+    .refresh-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      line-height: 1.4;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0 2.5rem 1rem;
+    }
+
+    .toolbar button {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .toolbar button:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .toolbar .primary {
+      border-color: rgba(255, 107, 53, 0.5);
+      color: var(--accent);
+    }
+
+    #status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    #status.error { color: #ff6b6b; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .muted-dash { color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <header>
+    <h1>
+      <span>Bayesian Playoff Model</span>
+      2026 NBA Finals Bracket
+    </h1>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <nav class="toolbar" id="toolbar">
+    <button type="button" id="btn-refresh" class="primary">Refresh results</button>
+    <span id="status">Loading…</span>
+  </nav>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Championship Probability</h2>
+        <div id="prob-list"></div>
+      </section>
+      <section class="panel">
+        <h2>Legend</h2>
+        <p class="legend">
+          <span class="actual"></span> Series winner (from results)<br />
+          <span class="pred"></span> Model favorite to win series<br /><br />
+          Each matchup shows <strong>both teams’</strong> chance to win that series. Championship bars list every team still in the playoffs.
+        </p>
+        <p class="refresh-hint">
+          Run <code>python open_dashboard.py</code> to view. After new games, update the CSV files and click <strong>Refresh results</strong>.
+        </p>
+      </section>
+    </aside>
+
+    <div class="bracket-wrap">
+      <div class="conferences-grid">
+        <div class="conf-panel" id="east-panel"></div>
+        <div class="conf-panel" id="west-panel"></div>
+      </div>
+      <section class="finals-block" id="finals-section" hidden>
+        <div class="conf-header">
+          <span class="conf-badge" style="background:rgba(255,215,0,0.15);color:#ffd166;border-color:rgba(255,215,0,0.35)">NBA Finals</span>
+        </div>
+        <div class="bracket" id="finals-bracket"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Offline fallback data: python src/generate_dashboard.py -->
+  <script id="nba-dashboard-data">
+    window.DASHBOARD_DATA = {"generated_at": "2026-05-23", "current_round": 3, "data_source": "NBA.com fetch failed \u2014 using local CSV. cdn.nba.com failed: HTTP Error 403: Forbidden | stats.nba.com failed: HTTP Error 500: Internal Server Error", "champion_if_decided": null, "title_probabilities": [{"team": "Oklahoma City Thunder", "probability": 0.712, "seed": 1, "active": true}, {"team": "New York Knicks", "probability": 0.213, "seed": 3, "active": true}, {"team": "San Antonio Spurs", "probability": 0.067, "seed": 2, "active": true}, {"team": "Cleveland Cavaliers", "probability": 0.008, "seed": 4, "active": true}, {"team": "Detroit Pistons", "probability": 0.0, "seed": 1, "active": false}, {"team": "Boston Celtics", "probability": 0.0, "seed": 2, "active": false}, {"team": "Toronto Raptors", "probability": 0.0, "seed": 5, "active": false}, {"team": "Atlanta Hawks", "probability": 0.0, "seed": 6, "active": false}, {"team": "Philadelphia 76ers", "probability": 0.0, "seed": 7, "active": false}, {"team": "Orlando Magic", "probability": 0.0, "seed": 8, "active": false}, {"team": "Denver Nuggets", "probability": 0.0, "seed": 3, "active": false}, {"team": "Los Angeles Lakers", "probability": 0.0, "seed": 4, "active": false}, {"team": "Houston Rockets", "probability": 0.0, "seed": 5, "active": false}, {"team": "Minnesota Timberwolves", "probability": 0.0, "seed": 6, "active": false}, {"team": "Phoenix Suns", "probability": 0.0, "seed": 7, "active": false}, {"team": "Portland Trail Blazers", "probability": 0.0, "seed": 8, "active": false}], "east": {"conference": "East", "round1": [{"team_a": "Detroit Pistons", "team_b": "Orlando Magic", "seed_a": 1, "seed_b": 8, "conference": "East", "wins_a": 4, "wins_b": 3, "complete": true, "winner": "Detroit Pistons", "predicted_winner": "Detroit Pistons", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.6471, "game_prob_b": 0.3529}, {"team_a": "Boston Celtics", "team_b": "Philadelphia 76ers", "seed_a": 2, "seed_b": 7, "conference": "East", "wins_a": 3, "wins_b": 4, "complete": true, "winner": "Philadelphia 76ers", "predicted_winner": "Philadelphia 76ers", "prob_a_wins_series": 0.0, "prob_b_wins_series": 1.0, "game_prob_a": 0.5967, "game_prob_b": 0.4033}, {"team_a": "New York Knicks", "team_b": "Atlanta Hawks", "seed_a": 3, "seed_b": 6, "conference": "East", "wins_a": 4, "wins_b": 2, "complete": true, "winner": "New York Knicks", "predicted_winner": "New York Knicks", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.745, "game_prob_b": 0.255}, {"team_a": "Cleveland Cavaliers", "team_b": "Toronto Raptors", "seed_a": 4, "seed_b": 5, "conference": "East", "wins_a": 4, "wins_b": 3, "complete": true, "winner": "Cleveland Cavaliers", "predicted_winner": "Cleveland Cavaliers", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.5641, "game_prob_b": 0.4359}], "round2": [{"team_a": "New York Knicks", "team_b": "Philadelphia 76ers", "seed_a": 3, "seed_b": 7, "conference": "East", "wins_a": 4, "wins_b": 0, "complete": true, "winner": "New York Knicks", "predicted_winner": "New York Knicks", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.7672, "game_prob_b": 0.2328}, {"team_a": "Cleveland Cavaliers", "team_b": "Detroit Pistons", "seed_a": 4, "seed_b": 1, "conference": "East", "wins_a": 4, "wins_b": 3, "complete": true, "winner": "Cleveland Cavaliers", "predicted_winner": "Cleveland Cavaliers", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.4546, "game_prob_b": 0.5454}], "round3": [{"team_a": "Cleveland Cavaliers", "team_b": "New York Knicks", "seed_a": 4, "seed_b": 3, "conference": "East", "wins_a": 0, "wins_b": 2, "complete": false, "winner": null, "predicted_winner": "New York Knicks", "prob_a_wins_series": 0.072, "prob_b_wins_series": 0.928, "game_prob_a": 0.3309, "game_prob_b": 0.6691}]}, "west": {"conference": "West", "round1": [{"team_a": "Oklahoma City Thunder", "team_b": "Phoenix Suns", "seed_a": 1, "seed_b": 7, "conference": "West", "wins_a": 4, "wins_b": 0, "complete": true, "winner": "Oklahoma City Thunder", "predicted_winner": "Oklahoma City Thunder", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.9044, "game_prob_b": 0.0956}, {"team_a": "San Antonio Spurs", "team_b": "Portland Trail Blazers", "seed_a": 2, "seed_b": 8, "conference": "West", "wins_a": 4, "wins_b": 1, "complete": true, "winner": "San Antonio Spurs", "predicted_winner": "San Antonio Spurs", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.8228, "game_prob_b": 0.1772}, {"team_a": "Denver Nuggets", "team_b": "Minnesota Timberwolves", "seed_a": 3, "seed_b": 6, "conference": "West", "wins_a": 4, "wins_b": 2, "complete": true, "winner": "Denver Nuggets", "predicted_winner": "Denver Nuggets", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.6432, "game_prob_b": 0.3568}, {"team_a": "Los Angeles Lakers", "team_b": "Houston Rockets", "seed_a": 4, "seed_b": 5, "conference": "West", "wins_a": 4, "wins_b": 2, "complete": true, "winner": "Los Angeles Lakers", "predicted_winner": "Los Angeles Lakers", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.5654, "game_prob_b": 0.4346}], "round2": [{"team_a": "Oklahoma City Thunder", "team_b": "Los Angeles Lakers", "seed_a": 1, "seed_b": 4, "conference": "West", "wins_a": 4, "wins_b": 0, "complete": true, "winner": "Oklahoma City Thunder", "predicted_winner": "Oklahoma City Thunder", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.8133, "game_prob_b": 0.1867}, {"team_a": "San Antonio Spurs", "team_b": "Minnesota Timberwolves", "seed_a": 2, "seed_b": 6, "conference": "West", "wins_a": 4, "wins_b": 2, "complete": true, "winner": "San Antonio Spurs", "predicted_winner": "San Antonio Spurs", "prob_a_wins_series": 1.0, "prob_b_wins_series": 0.0, "game_prob_a": 0.7034, "game_prob_b": 0.2966}], "round3": [{"team_a": "Oklahoma City Thunder", "team_b": "San Antonio Spurs", "seed_a": 1, "seed_b": 2, "conference": "West", "wins_a": 2, "wins_b": 1, "complete": false, "winner": null, "predicted_winner": "Oklahoma City Thunder", "prob_a_wins_series": 0.878, "prob_b_wins_series": 0.122, "game_prob_a": 0.7086, "game_prob_b": 0.2914}]}, "finals": {"team_a": "New York Knicks", "team_b": "Oklahoma City Thunder", "seed_a": 3, "seed_b": 1, "conference": "Finals", "wins_a": 0, "wins_b": 0, "complete": false, "winner": null, "predicted_winner": "Oklahoma City Thunder", "prob_a_wins_series": 0.2375, "prob_b_wins_series": 0.7625, "game_prob_a": 0.3091, "game_prob_b": 0.6909}, "baseline_series": [{"round": 1, "team_a": "Detroit Pistons", "team_b": "Orlando Magic", "wins_a": 4, "wins_b": 3}, {"round": 1, "team_a": "Boston Celtics", "team_b": "Philadelphia 76ers", "wins_a": 3, "wins_b": 4}, {"round": 1, "team_a": "New York Knicks", "team_b": "Atlanta Hawks", "wins_a": 4, "wins_b": 2}, {"round": 1, "team_a": "Cleveland Cavaliers", "team_b": "Toronto Raptors", "wins_a": 4, "wins_b": 3}, {"round": 1, "team_a": "Oklahoma City Thunder", "team_b": "Phoenix Suns", "wins_a": 4, "wins_b": 0}, {"round": 1, "team_a": "San Antonio Spurs", "team_b": "Portland Trail Blazers", "wins_a": 4, "wins_b": 1}, {"round": 1, "team_a": "Denver Nuggets", "team_b": "Minnesota Timberwolves", "wins_a": 4, "wins_b": 2}, {"round": 1, "team_a": "Los Angeles Lakers", "team_b": "Houston Rockets", "wins_a": 4, "wins_b": 2}, {"round": 2, "team_a": "New York Knicks", "team_b": "Philadelphia 76ers", "wins_a": 4, "wins_b": 0}, {"round": 2, "team_a": "Cleveland Cavaliers", "team_b": "Detroit Pistons", "wins_a": 4, "wins_b": 3}, {"round": 2, "team_a": "Oklahoma City Thunder", "team_b": "Los Angeles Lakers", "wins_a": 4, "wins_b": 0}, {"round": 2, "team_a": "San Antonio Spurs", "team_b": "Minnesota Timberwolves", "wins_a": 4, "wins_b": 2}, {"round": 3, "team_a": "Cleveland Cavaliers", "team_b": "New York Knicks", "wins_a": 0, "wins_b": 2}, {"round": 3, "team_a": "Oklahoma City Thunder", "team_b": "San Antonio Spurs", "wins_a": 2, "wins_b": 1}]};
+  </script>
+  <script src="dashboard_app.js?v=7"></script>
+</body>
+</html>
