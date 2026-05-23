@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 .DS_Store
+dashboard_data.js
+outputs/dashboard_data.json

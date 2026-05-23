@@ -3,7 +3,6 @@
 import os
 import subprocess
 import sys
-import threading
 import time
 import webbrowser
 
@@ -23,7 +22,7 @@ def main():
     proc = subprocess.Popen([sys.executable, server_script])
     time.sleep(0.6)
 
-    url = f"http://127.0.0.1:{port}/dashboard.html"
+    url = f"http://127.0.0.1:{port}/dashboard/dashboard.html"
     webbrowser.open(url)
     print(f"Interactive dashboard: {url}")
     print("Edit matchups in the browser. Ctrl+C here stops the server.")

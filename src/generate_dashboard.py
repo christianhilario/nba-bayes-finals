@@ -1,4 +1,4 @@
-"""Run the Bayesian model and export data for dashboard.html."""
+"""Run the Bayesian model and embed data in the static dashboard."""
 
 import json
 import os
@@ -10,7 +10,9 @@ from dashboard_model import build_dashboard_payload
 from nba_fetch import fetch_actual_results
 
 
-def embed_data_in_dashboard_html(payload, html_path="dashboard.html"):
+def embed_data_in_dashboard_html(
+    payload, html_path=os.path.join("dashboard", "dashboard.html")
+):
     if not os.path.exists(html_path):
         return
 
@@ -39,19 +41,13 @@ def main():
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     os.chdir(root)
 
-    results, note = fetch_actual_results(source="auto")
+    results, note = fetch_actual_results(source="csv")
     payload = build_dashboard_payload(results, data_source=note)
 
     os.makedirs("outputs", exist_ok=True)
     json_path = os.path.join("outputs", "dashboard_data.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
-
-    js_path = os.path.join("dashboard_data.js")
-    with open(js_path, "w", encoding="utf-8") as f:
-        f.write("window.DASHBOARD_DATA = ")
-        json.dump(payload, f)
-        f.write(";\n")
 
     embed_data_in_dashboard_html(payload)
 

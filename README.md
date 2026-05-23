@@ -6,7 +6,6 @@ Built as a personal extension of concepts from DS-122 at Boston University. Than
 
 ![Dashboard Preview](outputs/dashboard_preview.png)
 
-
 ## Project Status
 
 This project is being updated throughout the 2026 NBA playoffs as new results become available.
@@ -16,9 +15,7 @@ This project is being updated throughout the 2026 NBA playoffs as new results be
 
 ## The Idea
 
-After learning about Bayesian updating and probability of superiority in class, I wanted to apply those ideas to something real and dynamic.
-
-The question I wanted to explore was:
+After learning about Bayesian updating and probability of superiority in class, I wanted to apply those ideas to something real and dynamic:
 
 > Given what we know from the regular season and updated playoff results, how likely is each remaining team to win the Finals?
 
@@ -82,10 +79,10 @@ This update incorporates the latest Round 3 / Conference Finals results as of Ma
 
 | Team | Win Probability |
 |---|---:|
-| [Team 1] | 39% |
-| [Team 2] | 31% |
-| [Team 3] | 25% |
-| [Team 4] | 4% |
+| Oklahoma City Thunder | 71.9% |
+| New York Knicks | 20.4% |
+| San Antonio Spurs | 6.7% |
+| Cleveland Cavaliers | 0.9% |
 
 ![Round 3 Chart](outputs/round3_chart.png)
 
@@ -102,7 +99,7 @@ This makes the project useful for understanding not only which team is favored, 
 Install the required packages:
 
 ```bash
-pip install pandas numpy matplotlib scipy
+pip install -r requirements.txt
 ```
 
 Run the model:
@@ -113,10 +110,7 @@ python src/main.py
 
 ### Bracket Dashboard
 
-![Dashboard Preview](outputs/dashboard_preview.png)
-
-A frontend dashboard visualizes the Bayesian posterior 
-probabilities in a user-friendly way. Built with HTML, CSS, and JavaScript.
+A frontend dashboard visualizes the Bayesian posterior probabilities in a user-friendly way. Built with HTML, CSS, and JavaScript.
 
 View the playoff bracket and Bayesian Finals probabilities:
 
@@ -124,13 +118,13 @@ View the playoff bracket and Bayesian Finals probabilities:
 python open_dashboard.py
 ```
 
-This opens `http://127.0.0.1:8765/dashboard.html`. Results load from your `data/round*_results.csv` files and NBA.com when available. Click **Refresh results** after updating the CSVs.
+This opens `http://127.0.0.1:8765/dashboard/dashboard.html`. Results load from your `data/round*_results.csv` files and NBA.com when available. Click **Refresh results** after updating the CSVs.
 
-**Important:** Run `open_dashboard.py` — do not copy-paste the HTML into Chrome.
+**Important:** Run `open_dashboard.py` - do not copy-paste the HTML into Chrome.
 
 ## How to Update After New Games
 
-Update the playoff results file with the latest series scores, then rerun the model:
+Update the playoff results CSVs with the latest series scores, then rerun the model:
 
 ```bash
 python src/main.py
@@ -138,14 +132,12 @@ python src/main.py
 
 The model will generate updated posterior probabilities and charts in the `outputs/` folder.
 
-
 ## Tech Stack
 
 - Python
 - pandas
 - NumPy
 - Matplotlib
-- SciPy
 
 ## Course Connection
 
@@ -169,11 +161,8 @@ Topics applied:
 
 ## Future Improvements
 
-Potential improvements include:
-
 - Add injury and player availability data
 - Include home court advantage
 - Use point differential and advanced team statistics
 - Fit prior weights using historical playoff data
-- ~~Add an interactive dashboard~~ (see `dashboard.html` — read-only bracket view changed on May 23, 2026)
 - Automate updates from live NBA data sources

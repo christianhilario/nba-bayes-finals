@@ -5,7 +5,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from load_data import load_teams, load_playoff_results
+from load_data import load_teams
 from priors import build_prior_means
 from update_model import bayesian_update
 from simulate_playoffs import posterior_title_probs
@@ -14,11 +14,16 @@ from simulate_playoffs import posterior_title_probs
 
 def main():
     teams_df = load_teams("data/teams_2026.csv")
-    playoff_df, ROUND = load_playoff_results()
 
-    from dashboard_model import load_all_round_results
+    from dashboard_model import (
+        current_round_from_results,
+        load_all_round_results,
+        playoff_df_from_results,
+    )
 
     results_by_round = load_all_round_results()
+    playoff_df = playoff_df_from_results(results_by_round)
+    ROUND = current_round_from_results(results_by_round)
 
     priors_df = build_prior_means(teams_df)
     teams, samples, weights = bayesian_update(priors_df, playoff_df)

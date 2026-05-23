@@ -50,7 +50,7 @@ def main(port=8765):
     print("Loading playoff data and running Bayesian model…")
     _warm_cache()
     server = ThreadingHTTPServer(("127.0.0.1", port), DashboardHandler)
-    print(f"Dashboard: http://127.0.0.1:{port}/dashboard.html")
+    print(f"Dashboard: http://127.0.0.1:{port}/dashboard/dashboard.html")
     print("Press Ctrl+C to stop.")
     server.serve_forever()
 
