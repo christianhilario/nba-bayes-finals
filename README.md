@@ -4,6 +4,9 @@ A Python project that uses Bayesian inference and Monte Carlo simulation to esti
 
 Built as a personal extension of concepts from DS-122 at Boston University. Thank you Professor Wobbes.
 
+![Dashboard Preview](outputs/dashboard_preview.png)
+
+
 ## Project Status
 
 This project is being updated throughout the 2026 NBA playoffs as new results become available.
@@ -110,6 +113,11 @@ python src/main.py
 
 ### Bracket Dashboard
 
+![Dashboard Preview](outputs/dashboard_preview.png)
+
+A frontend dashboard visualizes the Bayesian posterior 
+probabilities in a user-friendly way. Built with HTML, CSS, and JavaScript.
+
 View the playoff bracket and Bayesian Finals probabilities:
 
 ```bash
@@ -129,6 +137,7 @@ python src/main.py
 ```
 
 The model will generate updated posterior probabilities and charts in the `outputs/` folder.
+
 
 ## Tech Stack
 
@@ -166,5 +175,5 @@ Potential improvements include:
 - Include home court advantage
 - Use point differential and advanced team statistics
 - Fit prior weights using historical playoff data
-- ~~Add an interactive dashboard~~ (see `dashboard.html` — read-only bracket view)
+- ~~Add an interactive dashboard~~ (see `dashboard.html` — read-only bracket view changed on May 23, 2026)
 - Automate updates from live NBA data sources
