@@ -45,11 +45,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def main(port=8765):
+    from http.server import HTTPServer
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     os.chdir(root)
     print("Loading playoff data and running Bayesian model…")
     _warm_cache()
-    server = ThreadingHTTPServer(("127.0.0.1", port), DashboardHandler)
+    server = HTTPServer(("127.0.0.1", port), DashboardHandler)
     print(f"Dashboard: http://127.0.0.1:{port}/dashboard/dashboard.html")
     print("Press Ctrl+C to stop.")
     server.serve_forever()
