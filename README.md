@@ -124,13 +124,25 @@ This opens `http://127.0.0.1:8765/dashboard/dashboard.html`. Results load from y
 
 ## How to Update After New Games
 
-Update the playoff results CSVs with the latest series scores, then rerun the model:
+### Step 1 — Update the current round CSV
+Open the relevant round file and update the win counts:
 
+data/round1_results.csv   ← First round
+data/round2_results.csv   ← Second round
+data/round3_results.csv   ← Conference Finals
+data/finals_results.csv   ← NBA Finals
+
+### Step 2 — Regenerate the model
 ```bash
 python src/main.py
 ```
 
-The model will generate updated posterior probabilities and charts in the `outputs/` folder.
+### Step 3 — View the dashboard
+```bash
+python open_dashboard.py
+```
+
+This embeds fresh data into the dashboard and opens it in your browser automatically.
 
 ## Tech Stack
 
@@ -151,8 +163,20 @@ Topics applied:
 - posterior updating
 - uncertainty modeling
 
-## Limitations
+## Important Limitations
 
+**This model is locked to the 2026 NBA Playoffs.**
+
+- The bracket logic in `src/simulate_playoffs.py` and `src/bracket.py` is 
+  hardcoded to the current 2026 playoff teams and matchups
+- To use this for a different season or different round, you would need to 
+  manually update the bracket logic inside the source code
+- The model cannot automatically detect or simulate matchups it was not 
+  programmed with — adding a new round requires updating `src/simulate_playoffs.py`
+- Data only goes as far as what is manually entered into the CSV files — 
+  the NBA.com live fetch is experimental and may not always work
+- This project is meant as a Bayesian demonstration, not a production 
+  forecasting tool
 - Prior weights were chosen manually rather than fit to historical playoff data
 - The model does not currently account for injuries, home court advantage, rest days, or player matchups
 - The model uses wins and losses rather than point differential or advanced team/player statistics
